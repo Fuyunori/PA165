@@ -12,7 +12,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
-<!-- TODO you should configure the compiler plugin! (use release tag or source/target tags) -->
 	<build>
 		<plugins>
 			<plugin>
