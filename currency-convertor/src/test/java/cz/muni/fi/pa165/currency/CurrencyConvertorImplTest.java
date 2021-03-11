@@ -97,11 +97,11 @@ public class CurrencyConvertorImplTest {
      */
     @Test
     public void testConvertWithRoundingDown() throws ExternalServiceFailureException {
-        BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
+        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
 
         // convert 67.85625 CZK to EUR -> 2.585 EUR - the rounding is half_even, thus it's rounded down, because the discarded number is even
         final BigDecimal SIXTY_SEVEN = new BigDecimal("67.85625");
-        final BigDecimal expected = SIXTY_SEVEN.multiply(exchangeRateFromEURtoCZK);
+        final BigDecimal expected = SIXTY_SEVEN.multiply(exchangeRateFromCZKtoEUR);
         assertEquals(retainTwoDecimalPoints(expected), currencyConvertor.convert(czk,eur, SIXTY_SEVEN));
     }
 
@@ -140,13 +140,16 @@ public class CurrencyConvertorImplTest {
     }
 
     @Test
-    public void testConvertWithUnknownCurrency() {
+    public void testConvertWithUnknownCurrency() throws ExternalServiceFailureException {
+        when(exchangeRateTable.getExchangeRate(any(Currency.class), any(Currency.class))).thenReturn(null);
         assertThrows(UnknownExchangeRateException.class,() -> currencyConvertor.convert(czk, eur, ZERO));
     }
 
     @Test
-    public void testConvertWithExternalServiceFailure() {
+    public void testConvertWithExternalServiceFailure() throws ExternalServiceFailureException {
+        when(exchangeRateTable.getExchangeRate(any(Currency.class), any(Currency.class))).thenThrow(new ExternalServiceFailureException("The service is unavailable"));
         assertThrows(UnknownExchangeRateException.class, () -> currencyConvertor.convert(czk, eur, ZERO));
+        assertThrows(UnknownExchangeRateException.class, () -> currencyConvertor.convert(eur, czk, ZERO));
     }
 
 }
