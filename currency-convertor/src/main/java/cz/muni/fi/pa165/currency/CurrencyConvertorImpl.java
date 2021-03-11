@@ -26,7 +26,7 @@ public class CurrencyConvertorImpl implements CurrencyConvertor {
         }
 
         if(sourceCurrency.equals(targetCurrency)){
-            return convertToTwoDecimalPoints(sourceAmount);
+            return convertToTwoDecimalPointsUsingHalfEven(sourceAmount);
         }
 
         try {
@@ -37,13 +37,13 @@ public class CurrencyConvertorImpl implements CurrencyConvertor {
             }
 
             BigDecimal result = sourceAmount.multiply(exchangeRate);
-            return convertToTwoDecimalPoints(result);
+            return convertToTwoDecimalPointsUsingHalfEven(result);
         } catch (ExternalServiceFailureException esfe){
             throw new UnknownExchangeRateException("The exchange rate couldn't be retrieved.");
         }
     }
 
-    private BigDecimal convertToTwoDecimalPoints(BigDecimal result) {
+    private BigDecimal convertToTwoDecimalPointsUsingHalfEven(BigDecimal result) {
         return result.setScale(2, RoundingMode.HALF_EVEN);
     }
 

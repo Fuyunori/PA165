@@ -22,41 +22,36 @@ public class CurrencyConvertorImplTest {
 
     Currency eur = Currency.getInstance("EUR");
     Currency czk = Currency.getInstance("CZK");
-    final BigDecimal EUR_TO_CZK_RATE = new BigDecimal("26.25");
     final BigDecimal ZERO = new BigDecimal("0");
     final BigDecimal ONE = new BigDecimal("1");
+    final BigDecimal EUR_TO_CZK_RATE = new BigDecimal("26.25");
+    final BigDecimal CZK_TO_EUR_RATE = ONE.divide(EUR_TO_CZK_RATE, 12, RoundingMode.HALF_EVEN);
 
     @Before
     public void setUp() throws ExternalServiceFailureException {
         MockitoAnnotations.initMocks(this);
+
         when(exchangeRateTable.getExchangeRate(eur, czk)).thenReturn(EUR_TO_CZK_RATE);
-        when(exchangeRateTable.getExchangeRate(czk, eur)).thenReturn(ONE.divide(EUR_TO_CZK_RATE, RoundingMode.HALF_EVEN));
+        when(exchangeRateTable.getExchangeRate(czk, eur)).thenReturn(CZK_TO_EUR_RATE);
 
         currencyConvertor = new CurrencyConvertorImpl(exchangeRateTable);
     }
 
     @Test
     public void testConvert() throws ExternalServiceFailureException {
-        BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
-        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
-
         // BASIC TESTS
         // convert 1 EUR to CZK -> 26.25 CZK
-        final BigDecimal oneEURtoCZK = ONE.multiply(exchangeRateFromEURtoCZK);
-        assertEquals(retainTwoDecimalPoints(oneEURtoCZK), currencyConvertor.convert(eur,czk,ONE));
+        assertEquals(new BigDecimal("26.25"), currencyConvertor.convert(eur,czk,ONE));
 
         // convert 1 CZK to EUR -> 0.04 EUR
-        final BigDecimal oneCZKtoEUR = ONE.multiply(exchangeRateFromCZKtoEUR);
-        assertEquals(retainTwoDecimalPoints(oneCZKtoEUR), currencyConvertor.convert(czk,eur,ONE));
+        assertEquals(new BigDecimal("0.04"), currencyConvertor.convert(czk,eur,ONE));
 
         // convert 0.03809523809523809523809523809524 EUR to CZK -> 1 CZK
         final BigDecimal ZERO_POINT_THREE = new BigDecimal("0.03809523809523809523809523809524");
-        final BigDecimal reverseOneCZKtoEUR = ZERO_POINT_THREE.multiply(exchangeRateFromEURtoCZK);
-        assertEquals(retainTwoDecimalPoints(reverseOneCZKtoEUR), currencyConvertor.convert(eur,czk,ZERO_POINT_THREE));
+        assertEquals(retainTwoDecimalPoints(ONE), currencyConvertor.convert(eur,czk,ZERO_POINT_THREE));
 
         // convert 26.25 CZK to EUR -> 1 EUR
-        final BigDecimal reverseOneEURtoCZK = EUR_TO_CZK_RATE.multiply(exchangeRateFromCZKtoEUR);
-        assertEquals(retainTwoDecimalPoints(reverseOneEURtoCZK), currencyConvertor.convert(czk,eur,EUR_TO_CZK_RATE));
+        assertEquals(retainTwoDecimalPoints(ONE), currencyConvertor.convert(czk,eur,EUR_TO_CZK_RATE));
 
         // Don't forget to test border values and proper rounding.
     }
@@ -79,47 +74,34 @@ public class CurrencyConvertorImplTest {
 
     /**
      * CHECKING CORRECT ROUNDING UP ACCORDING TO HALF_EVEN
-     * @throws ExternalServiceFailureException
      */
     @Test
-    public void testConvertWithRoundingUp() throws ExternalServiceFailureException {
-        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
-
+    public void testConvertWithRoundingUp() {
         // convert 90.708 CZK to EUR -> 3,4555... EUR - the rounding is half_even, thus it's rounded up, because the discarded number is odd
         final BigDecimal NINETY_POINT = new BigDecimal("90.69375");
-        final BigDecimal expected = NINETY_POINT.multiply(exchangeRateFromCZKtoEUR);
-        assertEquals(retainTwoDecimalPoints(expected), currencyConvertor.convert(czk,eur, NINETY_POINT));
+        assertEquals(new BigDecimal("3.45"), currencyConvertor.convert(czk,eur, NINETY_POINT));
     }
 
     /**
      * CHECKING CORRECT ROUNDING DOWN ACCORDING TO HALF_EVEN
-     * @throws ExternalServiceFailureException
      */
     @Test
-    public void testConvertWithRoundingDown() throws ExternalServiceFailureException {
-        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
-
+    public void testConvertWithRoundingDown() {
         // convert 67.85625 CZK to EUR -> 2.585 EUR - the rounding is half_even, thus it's rounded down, because the discarded number is even
         final BigDecimal SIXTY_SEVEN = new BigDecimal("67.85625");
-        final BigDecimal expected = SIXTY_SEVEN.multiply(exchangeRateFromCZKtoEUR);
-        assertEquals(retainTwoDecimalPoints(expected), currencyConvertor.convert(czk,eur, SIXTY_SEVEN));
+        assertEquals(new BigDecimal("2.58"), currencyConvertor.convert(czk,eur, SIXTY_SEVEN));
     }
 
     /**
      * CHECKING MULTIPLYING BY ZERO
      */
     @Test
-    public void testConvertWithZeroAmount() throws ExternalServiceFailureException {
-        BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
-        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
-
+    public void testConvertWithZeroAmount() {
         // convert 0 EUR to CZK -> 0 CZK
-        final BigDecimal zeroEURtoCZK = ZERO.multiply(exchangeRateFromEURtoCZK);
-        assertEquals(retainTwoDecimalPoints(zeroEURtoCZK), currencyConvertor.convert(eur,czk,ZERO));
+        assertEquals(retainTwoDecimalPoints(ZERO), currencyConvertor.convert(eur,czk,ZERO));
 
         // convert 0 CZK to EUR -> 0 EUR
-        final BigDecimal zeroCZKtoEUR = ZERO.multiply(exchangeRateFromCZKtoEUR);
-        assertEquals(retainTwoDecimalPoints(zeroCZKtoEUR), currencyConvertor.convert(czk,eur,ZERO));
+        assertEquals(retainTwoDecimalPoints(ZERO), currencyConvertor.convert(czk,eur,ZERO));
     }
 
     @Test
