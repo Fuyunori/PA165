@@ -20,7 +20,12 @@
         <!-- reference to the used appender -->
         <appender-ref ref="APP"/>
     </root>
+    <root level="trace">
+        <!-- reference to the used appender -->
+        <appender-ref ref="APP"/>
+    </root>
 
     <!-- list of logger prefixes with non-default logging levels -->
     <logger name="org" level="info"/>
+    <logger name="org" level="trace"/>
 </configuration>

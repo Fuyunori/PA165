@@ -24,7 +24,9 @@ public class CurrencyConvertorImpl implements CurrencyConvertor {
 
     @Override
     public BigDecimal convert(Currency sourceCurrency, Currency targetCurrency, BigDecimal sourceAmount) {
-        logger.trace("Convert method called with this parameter {}", exchangeRateTable);
+        logger.trace("Convert method called with following arguments: " +
+                "sourceCurrency={}, targetCurrency={}, sourceAmount={}.",
+                sourceCurrency, targetCurrency, sourceAmount);
         if(sourceCurrency == null || targetCurrency == null || sourceAmount == null){
             logger.warn("At least one of the arguments of the convert method is null.");
             throw new IllegalArgumentException();

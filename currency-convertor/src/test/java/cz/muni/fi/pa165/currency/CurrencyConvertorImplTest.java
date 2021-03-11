@@ -11,7 +11,6 @@ import java.util.Currency;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class CurrencyConvertorImplTest {
