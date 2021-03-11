@@ -15,7 +15,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class CurrencyConvertorImplTest {
-    @Mock
     CurrencyConvertor currencyConvertor;
 
     @Mock
@@ -30,45 +29,52 @@ public class CurrencyConvertorImplTest {
     @Before
     public void setUp() throws ExternalServiceFailureException {
         MockitoAnnotations.initMocks(this);
+        when(exchangeRateTable.getExchangeRate(eur, czk)).thenReturn(EUR_TO_CZK_RATE);
+        when(exchangeRateTable.getExchangeRate(czk, eur)).thenReturn(ONE.divide(EUR_TO_CZK_RATE, RoundingMode.HALF_EVEN));
+
+        currencyConvertor = new CurrencyConvertorImpl(exchangeRateTable);
     }
 
     @Test
     public void testConvert() throws ExternalServiceFailureException {
-        when(exchangeRateTable.getExchangeRate(eur, czk)).thenReturn(EUR_TO_CZK_RATE);
         BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
+        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
 
         // BASIC TESTS
         // convert 1 EUR to CZK -> 26.25 CZK
-        when(currencyConvertor.convert(eur, czk, ONE)).thenReturn(exchangeRateFromEURtoCZK.multiply(ONE));
-        assertEquals(EUR_TO_CZK_RATE, currencyConvertor.convert(eur,czk,ONE));
+        final BigDecimal oneEURtoCZK = ONE.multiply(exchangeRateFromEURtoCZK);
+        assertEquals(retainTwoDecimalPoints(oneEURtoCZK), currencyConvertor.convert(eur,czk,ONE));
 
         // convert 1 CZK to EUR -> 0.04 EUR
-        when(currencyConvertor.convert(czk, eur, ONE)).thenReturn(ONE.divide(exchangeRateFromEURtoCZK, 2, RoundingMode.HALF_EVEN));
-        assertEquals(new BigDecimal("0.04"), currencyConvertor.convert(czk,eur,ONE));
-
-        // convert 26.25 CZK to EUR -> 1 EUR
-        when(currencyConvertor.convert(czk, eur, EUR_TO_CZK_RATE)).thenReturn(exchangeRateFromEURtoCZK.divide(EUR_TO_CZK_RATE, RoundingMode.HALF_EVEN));
-        assertEquals(new BigDecimal("1.00"), currencyConvertor.convert(czk,eur,EUR_TO_CZK_RATE));
+        final BigDecimal oneCZKtoEUR = ONE.multiply(exchangeRateFromCZKtoEUR);
+        assertEquals(retainTwoDecimalPoints(oneCZKtoEUR), currencyConvertor.convert(czk,eur,ONE));
 
         // convert 0.03809523809523809523809523809524 EUR to CZK -> 1 CZK
-        when(currencyConvertor.convert(eur, czk, new BigDecimal("0.03809523809523809523809523809524"))).thenReturn(exchangeRateFromEURtoCZK.divide(EUR_TO_CZK_RATE, RoundingMode.HALF_EVEN));
-        assertEquals(new BigDecimal("1.00"), currencyConvertor.convert(eur,czk,new BigDecimal("0.03809523809523809523809523809524")));
+        final BigDecimal ZERO_POINT_THREE = new BigDecimal("0.03809523809523809523809523809524");
+        final BigDecimal reverseOneCZKtoEUR = ZERO_POINT_THREE.multiply(exchangeRateFromEURtoCZK);
+        assertEquals(retainTwoDecimalPoints(reverseOneCZKtoEUR), currencyConvertor.convert(eur,czk,ZERO_POINT_THREE));
+
+        // convert 26.25 CZK to EUR -> 1 EUR
+        final BigDecimal reverseOneEURtoCZK = EUR_TO_CZK_RATE.multiply(exchangeRateFromCZKtoEUR);
+        assertEquals(retainTwoDecimalPoints(reverseOneEURtoCZK), currencyConvertor.convert(czk,eur,EUR_TO_CZK_RATE));
 
         // Don't forget to test border values and proper rounding.
+    }
+
+    private BigDecimal retainTwoDecimalPoints(BigDecimal value){
+        return value.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     /**
      * CONVERSION FROM THE SAME CURRENCY
      */
     @Test
-    public void testConvertWithSameCurrencies() {
+    public void testConvertWithSameCurrencies()  {
         // convert 0 CZK to CZK -> 0 CZK
-        when(currencyConvertor.convert(czk, czk, ZERO)).thenReturn(new BigDecimal("0.00"));
-        assertEquals(new BigDecimal("0.00"), currencyConvertor.convert(czk,czk,ZERO));
+        assertEquals(retainTwoDecimalPoints(ZERO), currencyConvertor.convert(czk,czk,ZERO));
 
         // convert 0 EUR to EUR -> 0 EUR
-        when(currencyConvertor.convert(eur, eur, ZERO)).thenReturn(new BigDecimal("0.00"));
-        assertEquals(new BigDecimal("0.00"), currencyConvertor.convert(eur,eur,ZERO));
+        assertEquals(retainTwoDecimalPoints(ZERO), currencyConvertor.convert(eur,eur,ZERO));
     }
 
     /**
@@ -77,13 +83,12 @@ public class CurrencyConvertorImplTest {
      */
     @Test
     public void testConvertWithRoundingUp() throws ExternalServiceFailureException {
-        when(exchangeRateTable.getExchangeRate(eur, czk)).thenReturn(EUR_TO_CZK_RATE);
-        BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
+        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
 
         // convert 90.708 CZK to EUR -> 3,4555... EUR - the rounding is half_even, thus it's rounded up, because the discarded number is odd
         final BigDecimal NINETY_POINT = new BigDecimal("90.69375");
-        when(currencyConvertor.convert(czk, eur, NINETY_POINT)).thenReturn(NINETY_POINT.divide(exchangeRateFromEURtoCZK, 2, RoundingMode.HALF_EVEN));
-        assertEquals(new BigDecimal("3.46"), currencyConvertor.convert(czk,eur, NINETY_POINT));
+        final BigDecimal expected = NINETY_POINT.multiply(exchangeRateFromCZKtoEUR);
+        assertEquals(retainTwoDecimalPoints(expected), currencyConvertor.convert(czk,eur, NINETY_POINT));
     }
 
     /**
@@ -92,77 +97,56 @@ public class CurrencyConvertorImplTest {
      */
     @Test
     public void testConvertWithRoundingDown() throws ExternalServiceFailureException {
-        when(exchangeRateTable.getExchangeRate(eur, czk)).thenReturn(EUR_TO_CZK_RATE);
         BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
 
         // convert 67.85625 CZK to EUR -> 2.585 EUR - the rounding is half_even, thus it's rounded down, because the discarded number is even
         final BigDecimal SIXTY_SEVEN = new BigDecimal("67.85625");
-        when(currencyConvertor.convert(czk, eur, SIXTY_SEVEN)).thenReturn(SIXTY_SEVEN.divide(exchangeRateFromEURtoCZK, 2, RoundingMode.HALF_EVEN));
-        assertEquals(new BigDecimal("2.58"), currencyConvertor.convert(czk,eur, SIXTY_SEVEN));
+        final BigDecimal expected = SIXTY_SEVEN.multiply(exchangeRateFromEURtoCZK);
+        assertEquals(retainTwoDecimalPoints(expected), currencyConvertor.convert(czk,eur, SIXTY_SEVEN));
     }
 
     /**
      * CHECKING MULTIPLYING BY ZERO
      */
     @Test
-    public void testConvertWithZeroAmount(){
-        // convert 0 EUR to CZK -> 0 CZK
-        when(currencyConvertor.convert(eur, czk, ZERO)).thenReturn(ZERO);
-        assertEquals(new BigDecimal("0.00"), currencyConvertor.convert(eur,czk,ZERO));
+    public void testConvertWithZeroAmount() throws ExternalServiceFailureException {
+        BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
+        BigDecimal exchangeRateFromCZKtoEUR = exchangeRateTable.getExchangeRate(czk, eur);
 
         // convert 0 EUR to CZK -> 0 CZK
-        when(currencyConvertor.convert(czk, eur, ZERO)).thenReturn(ZERO);
-        assertEquals(new BigDecimal("0.00"), currencyConvertor.convert(czk,eur,ZERO));
+        final BigDecimal zeroEURtoCZK = ZERO.multiply(exchangeRateFromEURtoCZK);
+        assertEquals(retainTwoDecimalPoints(zeroEURtoCZK), currencyConvertor.convert(eur,czk,ZERO));
+
+        // convert 0 CZK to EUR -> 0 EUR
+        final BigDecimal zeroCZKtoEUR = ZERO.multiply(exchangeRateFromCZKtoEUR);
+        assertEquals(retainTwoDecimalPoints(zeroCZKtoEUR), currencyConvertor.convert(czk,eur,ZERO));
     }
 
     @Test
     public void testConvertWithNullSourceCurrency() {
-        Currency anyTargetCurrency = any(Currency.class);
-        BigDecimal anySourceAmount = any(BigDecimal.class);
-
-        when(currencyConvertor.convert(eq(null), anyTargetCurrency, anySourceAmount)).thenThrow(new IllegalArgumentException());
-        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(eq(null), eq(czk), eq(EUR_TO_CZK_RATE)));
-        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(eq(null), eq(eur), eq(EUR_TO_CZK_RATE)));
+        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(null, czk, EUR_TO_CZK_RATE));
+        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(null, eur, EUR_TO_CZK_RATE));
     }
 
     @Test
     public void testConvertWithNullTargetCurrency() {
-        Currency anySourceCurrency = any(Currency.class);
-        BigDecimal anySourceAmount = any(BigDecimal.class);
-
-        when(currencyConvertor.convert(anySourceCurrency, eq(null), anySourceAmount)).thenThrow(new IllegalArgumentException());
-        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(eq(czk), eq(null), eq(EUR_TO_CZK_RATE)));
-        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(eq(eur), eq(null), eq(EUR_TO_CZK_RATE)));
+        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(czk, null, EUR_TO_CZK_RATE));
+        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(eur, null, EUR_TO_CZK_RATE));
     }
 
     @Test
     public void testConvertWithNullSourceAmount() {
-        Currency anySourceCurrency = any(Currency.class);
-        Currency anyTargetCurrency = any(Currency.class);
-
-        when(currencyConvertor.convert(anySourceCurrency, anyTargetCurrency, eq(null))).thenThrow(new IllegalArgumentException());
-        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(eq(czk),eq(eur),eq(null)));
+        assertThrows(IllegalArgumentException.class, () -> currencyConvertor.convert(czk,eur,null));
     }
 
     @Test
-    public void testConvertWithUnknownCurrency() throws ExternalServiceFailureException {
-        Currency anySourceCurrency = any(Currency.class);
-        Currency anyTargetCurrency = any(Currency.class);
-        BigDecimal anySourceAmount = any(BigDecimal.class);
-
-        when(exchangeRateTable.getExchangeRate(anySourceCurrency, anyTargetCurrency)).thenReturn(null);
-        BigDecimal exchangeRateFromEURtoCZK = exchangeRateTable.getExchangeRate(eur, czk);
-
-        when(currencyConvertor.convert(anySourceCurrency, anyTargetCurrency, anySourceAmount)).thenThrow(
-                new UnknownExchangeRateException("The exchange rate is not known,\n" +
-                        "     * because the lookup failed or information about given currencies pair is\n" +
-                        "     * not available"));
-
+    public void testConvertWithUnknownCurrency() {
+        assertThrows(UnknownExchangeRateException.class,() -> currencyConvertor.convert(czk, eur, ZERO));
     }
 
     @Test
     public void testConvertWithExternalServiceFailure() {
-        fail("Test is not implemented yet.");
+        assertThrows(UnknownExchangeRateException.class, () -> currencyConvertor.convert(czk, eur, ZERO));
     }
 
 }
