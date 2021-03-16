@@ -11,7 +11,7 @@ import java.util.Currency;
 public class MainJavaConfig {
     public static void main(String[] args) {
         ApplicationContext applicationContext = new AnnotationConfigApplicationContext(JavaConfig.class);
-        CurrencyConvertor currencyConvertor = applicationContext.getBean(CurrencyConvertorImpl.class);
+        CurrencyConvertor currencyConvertor = applicationContext.getBean(CurrencyConvertor.class);
         System.out.println(currencyConvertor.convert(Currency.getInstance("EUR"), Currency.getInstance("CZK"), BigDecimal.ONE));
     }
 }
