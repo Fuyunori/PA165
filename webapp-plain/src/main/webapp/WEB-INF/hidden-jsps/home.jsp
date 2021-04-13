@@ -13,5 +13,6 @@
 <jsp:attribute name="body"><%-- provide page-fragment attribute to be rendered by the my:layout tag --%>
   <p><my:a href="/snoop.jsp"><fmt:message key="index.snoop.link"/></my:a></p>
   <p><my:a href="/praha.jsp"><fmt:message key="index.praha.link"/></my:a></p>
+  <p><my:a href="/praha.jsp"><fmt:message key="index.podoli.link"/></my:a></p>
 </jsp:attribute>
 </my:pagetemplate>
