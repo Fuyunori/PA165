@@ -31,7 +31,7 @@
     <jsp:invoke fragment="body"/>
 </div>
 <div id="footer">
-    &copy; Masaryk University
+    &copy; <c:out value="${currentYear}"/> Masaryk University
 </div>
 </body>
 </html>
