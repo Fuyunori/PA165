@@ -38,7 +38,7 @@
     </tr>
   <c:forEach items="${drugs}" var="d">
     <tr>
-      <td>${d.name}</td>
+      <td><c:out value="${d.name}"/></td>
       <td><c:out value="${d.amount}"/></td>
       <td><c:out value="${d.vendor}"/></td>
     </tr>
