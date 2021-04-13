@@ -97,7 +97,7 @@
                     </container>
                     <configuration>
                         <properties>
-                            <cargo.servlet.users>pepa:heslo:user|admin:admin:administrator,user</cargo.servlet.users>
+                            <cargo.servlet.users>pepa:heslo:user|admin:admin:administrator,user|random:random:random</cargo.servlet.users>
                         </properties>
                     </configuration>
                 </configuration>

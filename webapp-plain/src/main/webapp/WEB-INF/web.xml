@@ -11,6 +11,9 @@
     <security-role>
         <role-name>user</role-name>
     </security-role>
+    <security-role>
+        <role-name>random</role-name>
+    </security-role>
 
     <!-- protect URLs -->
     <security-constraint>
@@ -22,6 +25,15 @@
         <auth-constraint>
             <role-name>administrator</role-name>
             <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Authentication for selected URLs</web-resource-name>
+            <url-pattern>/snoop.jsp</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>random</role-name>
         </auth-constraint>
     </security-constraint>
 
