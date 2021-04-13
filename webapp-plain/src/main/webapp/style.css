@@ -92,3 +92,8 @@ html>body #navigation li a {
     padding: 10px;
     margin-left: 130px;
 }
+
+#footer {
+    clear: both;
+    background-color:  lightblue;
+}
